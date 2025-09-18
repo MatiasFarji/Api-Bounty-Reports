@@ -17,7 +17,7 @@ El objetivo es ofrecer un **punto único de consulta** donde los reportes se pre
 ---
 
 ## 📁 Formato de salida
-La API expone resultados en formato `JSON`.  
+La API expone resultados en formato `JSON`. 
 Ejemplo:
 
 ```json

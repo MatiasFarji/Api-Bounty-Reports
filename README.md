@@ -22,11 +22,11 @@ Ejemplo:
 
 ```json
 {
-  "provider": "Bugcrowd",
+  "provider": "Hackerone",
   "title": "SQL Injection en endpoint de autenticación",
   "severity": "High",
   "category": "Injection",
   "status": "Resolved",
-  "url": "https://bugcrowd.com/report/12345",
+  "url": "https://hackerone.com/report/12345",
   "timestamp": "2025-09-16T12:34:56Z"
 }

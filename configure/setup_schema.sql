@@ -1,5 +1,18 @@
--- Enable UUID extension
+-- ========================================
+-- Extensions
+-- ========================================
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- ========================================
+-- Schema ownership
+-- ========================================
+-- Make sure the schema is owned by the app user
+ALTER SCHEMA public OWNER TO :db_user;
+
+-- Set default privileges so future objects will be accessible
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO :db_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO :db_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO :db_user;
 
 -- ========================================
 -- Sources table
@@ -63,3 +76,17 @@ CREATE INDEX IF NOT EXISTS idx_reports_search_vector ON reports USING GIN (searc
 -- Optimize common filters
 CREATE INDEX IF NOT EXISTS idx_reports_published_at ON reports(published_at);
 CREATE INDEX IF NOT EXISTS idx_reports_severity ON reports(severity);
+
+-- ========================================
+-- Transfer ownership to app user
+-- ========================================
+ALTER TABLE sources OWNER TO :db_user;
+ALTER SEQUENCE sources_id_seq OWNER TO :db_user;
+
+ALTER TABLE categories OWNER TO :db_user;
+ALTER SEQUENCE categories_id_seq OWNER TO :db_user;
+
+ALTER TABLE programs OWNER TO :db_user;
+ALTER SEQUENCE programs_id_seq OWNER TO :db_user;
+
+ALTER TABLE reports OWNER TO :db_user;

@@ -47,7 +47,7 @@ EOF
 
 echo "[*] Applying schema from ${SCHEMA_FILE}..."
 if [ -f "$SCHEMA_FILE" ]; then
-    sudo -u postgres psql -d ${DB_NAME} -f "$SCHEMA_FILE"
+    sudo -u postgres psql -d ${DB_NAME} -v db_user=${DB_USER} -f "$SCHEMA_FILE"
     echo "[✔] Schema applied successfully."
 else
     echo "[!] Schema file ${SCHEMA_FILE} not found. Skipping..."

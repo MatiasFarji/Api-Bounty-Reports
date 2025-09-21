@@ -33,10 +33,10 @@ BEGIN
     result := unix_ts_bytes || rand_bytes;
 
     -- set version (bits 48-51 → 0111 for v7)
-    result := set_byte(result, 6, (get_byte(result, 6) & 0x0F) | 0x70);
+    result := set_byte(result, 6, (get_byte(result, 6) & 15) | 112);
 
     -- set variant (bits 64-65 → 10)
-    result := set_byte(result, 8, (get_byte(result, 8) & 0x3F) | 0x80);
+    result := set_byte(result, 8, (get_byte(result, 8) & 63) | 128);
 
     RETURN encode(result, 'hex')::uuid;
 END;

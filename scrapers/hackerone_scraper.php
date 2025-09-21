@@ -13,7 +13,7 @@ class HackerOneScraper extends BaseScraper {
                 'external_id' => 'H1-12345',
                 'title'       => 'Reflected XSS in profile page',
                 'full_text'   => "Details of the vulnerability...",
-                'severity'    => 'medium',
+                'severity'    => 50,
                 'report_url'  => 'https://hackerone.com/reports/12345',
                 'published_at'=> date('Y-m-d H:i:s'),
                 'category'    => 'XSS',

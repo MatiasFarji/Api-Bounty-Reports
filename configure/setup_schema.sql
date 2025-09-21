@@ -88,14 +88,14 @@ CREATE TABLE IF NOT EXISTS programs (
 -- Reports table
 -- ========================================
 CREATE TABLE IF NOT EXISTS reports (
-    id UUID PRIMARY KEY DEFAULT gen_uuid_v7(), -- ✅ UUIDv7
+    id UUID PRIMARY KEY DEFAULT gen_uuid_v7(),
     source_id INT NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
     category_id INT REFERENCES categories(id) ON DELETE SET NULL,
     program_id INT REFERENCES programs(id) ON DELETE SET NULL,
     external_id TEXT,
     title TEXT NOT NULL,
     full_text TEXT,
-    severity TEXT,
+    severity SMALLINT CHECK (severity >= 0 AND severity <= 100),
     report_url TEXT,
     published_at TIMESTAMP,
     scraped_at TIMESTAMP DEFAULT now(),

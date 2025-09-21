@@ -70,13 +70,20 @@ foreach (get_declared_classes() as $class) {
                 continue;
             }
 
-            // Insert new report
+            // Insert new report, generating UUIDv7 from published_at (or current time if NULL)
             $stmt = $db->prepare("
-                INSERT INTO reports (source_id, category_id, program_id, external_id, title, full_text, severity, report_url, published_at)
-                VALUES (:source_id, :category_id, :program_id, :external_id, :title, :full_text, :severity, :report_url, :published_at)
+                INSERT INTO reports (
+                    id, source_id, category_id, program_id,
+                    external_id, title, full_text, severity, report_url, published_at
+                )
+                VALUES (
+                    gen_uuid_v7(:published_at), :source_id, :category_id, :program_id,
+                    :external_id, :title, :full_text, :severity, :report_url, :published_at
+                )
             ");
 
             $stmt->execute([
+                ':published_at' => $report['published_at'] ?? null,
                 ':source_id'    => $sourceId,
                 ':category_id'  => $categoryId,
                 ':program_id'   => $programId,
@@ -85,7 +92,6 @@ foreach (get_declared_classes() as $class) {
                 ':full_text'    => $report['full_text'],
                 ':severity'     => $report['severity'] ?? null,
                 ':report_url'   => $report['report_url'],
-                ':published_at' => $report['published_at'] ?? null
             ]);
 
             $inserted++;

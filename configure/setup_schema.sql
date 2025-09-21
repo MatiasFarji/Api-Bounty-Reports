@@ -6,7 +6,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto"; -- for gen_random_bytes()
 -- ========================================
 -- UUIDv7 generator
 -- ========================================
-CREATE OR REPLACE FUNCTION gen_uuid_v7()
+CREATE OR REPLACE FUNCTION gen_uuid_v7(ts TIMESTAMP WITH TIME ZONE DEFAULT NULL)
 RETURNS uuid AS $$
 DECLARE
     unix_ts_ms BIGINT;
@@ -14,8 +14,13 @@ DECLARE
     rand_bytes BYTEA;
     result BYTEA;
 BEGIN
-    -- current unix timestamp in milliseconds
-    unix_ts_ms := (EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::BIGINT;
+    -- If no timestamp is provided, use now()
+    IF ts IS NULL THEN
+        ts := clock_timestamp();
+    END IF;
+
+    -- Convert timestamp to milliseconds since epoch
+    unix_ts_ms := (EXTRACT(EPOCH FROM ts) * 1000)::BIGINT;
 
     -- timestamp as 6 bytes (48 bits)
     unix_ts_bytes := set_byte(set_byte(set_byte(set_byte(set_byte(set_byte('\x000000000000'::bytea,
@@ -41,6 +46,7 @@ BEGIN
     RETURN encode(result, 'hex')::uuid;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
+
 
 -- ========================================
 -- Schema ownership

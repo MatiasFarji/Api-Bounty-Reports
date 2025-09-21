@@ -1,7 +1,8 @@
 #!/bin/bash
 
 echo "======================================"
-echo "   PostgreSQL Installer (Debian)      "
+echo "   PostgreSQL + PHP Installer (Debian)"
+echo "   (No Apache, PHP built-in server)   "
 echo "======================================"
 
 # Ask for user inputs
@@ -19,6 +20,9 @@ sudo apt-get upgrade -y
 
 echo "[*] Installing PostgreSQL..."
 sudo apt-get install -y postgresql postgresql-contrib
+
+echo "[*] Installing PHP and required extensions..."
+sudo apt-get install -y php php-cli php-pgsql php-curl php-xml php-mbstring php-json
 
 echo "[*] Enabling and starting PostgreSQL service..."
 sudo systemctl enable postgresql
@@ -49,9 +53,31 @@ else
     echo "[!] Schema file ${SCHEMA_FILE} not found. Skipping..."
 fi
 
+echo "[*] Setting environment variables permanently in ~/.bashrc..."
+{
+  echo ""
+  echo "# === Bounty Reports API Environment Variables ==="
+  echo "export DB_USER=\"$DB_USER\""
+  echo "export DB_PASS=\"$DB_PASS\""
+  echo "export DB_NAME=\"$DB_NAME\""
+} >> ~/.bashrc
+
+# Reload environment variables now
+source ~/.bashrc
+
 echo "======================================"
 echo "[✔] Installation and setup completed."
 echo " Database user: $DB_USER"
 echo " Database name: $DB_NAME"
 echo " Schema file:  $SCHEMA_FILE"
+echo " PHP version:  $(php -v | head -n 1)"
 echo "======================================"
+
+echo ""
+echo "You can now start your API with multi-worker PHP server:"
+echo "    PHP_CLI_SERVER_WORKERS=20 php -S 0.0.0.0:8000 -t public/"
+echo ""
+echo "Or simply run:"
+echo "    startServer"
+echo ""
+echo "Tip: adjust workers (e.g., 10, 20, 50) depending on your Raspberry Pi resources."

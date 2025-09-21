@@ -19,12 +19,12 @@ BEGIN
 
     -- timestamp as 6 bytes (48 bits)
     unix_ts_bytes := set_byte(set_byte(set_byte(set_byte(set_byte(set_byte('\x000000000000'::bytea,
-        5, (unix_ts_ms >>  0) & 255),
-        4, (unix_ts_ms >>  8) & 255),
-        3, (unix_ts_ms >> 16) & 255),
-        2, (unix_ts_ms >> 24) & 255),
-        1, (unix_ts_ms >> 32) & 255),
-        0, (unix_ts_ms >> 40) & 255);
+        5, ((unix_ts_ms >>  0) & 255)::int),
+        4, ((unix_ts_ms >>  8) & 255)::int),
+        3, ((unix_ts_ms >> 16) & 255)::int),
+        2, ((unix_ts_ms >> 24) & 255)::int),
+        1, ((unix_ts_ms >> 32) & 255)::int),
+        0, ((unix_ts_ms >> 40) & 255)::int);
 
     -- random 10 bytes
     rand_bytes := gen_random_bytes(10);
@@ -33,10 +33,10 @@ BEGIN
     result := unix_ts_bytes || rand_bytes;
 
     -- set version (bits 48-51 → 0111 for v7)
-    result := set_byte(result, 6, (get_byte(result, 6) & 15) | 112);
+    result := set_byte(result, 6, ((get_byte(result, 6) & 15) | 112)::int);
 
     -- set variant (bits 64-65 → 10)
-    result := set_byte(result, 8, (get_byte(result, 8) & 63) | 128);
+    result := set_byte(result, 8, ((get_byte(result, 8) & 63) | 128)::int);
 
     RETURN encode(result, 'hex')::uuid;
 END;

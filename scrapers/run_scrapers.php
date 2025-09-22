@@ -9,6 +9,7 @@ define('PATH_CACHE', __DIR__ . "/../cache/");
 define('PATH_TEMPLATES', __DIR__ . "/");
 define('PATH_HELPERS', __DIR__ . "/../src/Utils/");
 define('FIRST_SCRAPING', (file_exists(PATH_CACHE . "last_executed.txt") ? false : true));
+define('DATE_LAST_SCRAPING', (FIRST_SCRAPING ? date("Y-m-d H:i:s", strtotime("-30 years")) : file_get_contents(PATH_CACHE . "last_executed.txt")));
 
 require_once PATH_HELPERS . '/Database.php';
 require_once PATH_HELPERS . 'Helpers.php';

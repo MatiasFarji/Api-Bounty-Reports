@@ -23,7 +23,7 @@
       },
       {
         "name": "accept-encoding",
-        "value": "gzip, deflate, br, zstd"
+        "value": "gzip"
       },
       {
         "name": "accept-language",
@@ -130,7 +130,7 @@
       },
       {
         "name": "accept-encoding",
-        "value": "gzip, deflate, br, zstd"
+        "value": "gzip"
       },
       {
         "name": "accept-language",

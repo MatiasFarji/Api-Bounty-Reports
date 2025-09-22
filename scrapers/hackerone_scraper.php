@@ -10,7 +10,7 @@ class HackerOneScraper extends BaseScraper
 
     public function scrape()
     {
-        global $requestCounter;
+        global $requestCounter, $requestsJsonTemplate;
         $totalReportsCount = 0;
         $reports = [];
 
@@ -27,37 +27,42 @@ class HackerOneScraper extends BaseScraper
             resetVariablesJsonTemplate();
 
             $text = json_decode($text['responseBody'], true);
-            $totalReportsCount = $text['data']['search']['total_count'] ?? 0;
+            if (is_array($text)) {
+                //$totalReportsCount = $text['data']['search']['total_count'] ?? 0;
+    
+                if (isset($text['data']['search']['nodes'])) {
+                    $fromIndex += count($text['data']['search']['nodes']);
+                    foreach ($text['data']['search']['nodes'] as $reportData) {
+                        $reportId = $reportData['_id'];
+    
+                        //Get details of a report
+                        $position = 1;
+                        $requestCounter++;
+                        require PATH_HELPERS . '/RequestVariablesSetFunction.php';
+                        showInfoNetworkRequest($position, $requestCounter);
+                        $text = executeNetworkRequest($position, $requestCounter);
+                        $text = json_decode($text['responseBody'], true);
+                        resetVariablesJsonTemplate();
+                        $report = [
+                            'external_id' => $reportData['_id'],
+                            'title'       => $reportData['report']['title'],
+                            'full_text'   => $text['vulnerability_information'],
+                            'severity'    => 0,
+                            'report_url'  => $reportData['report']['url'],
+                            'published_at' => date('Y-m-d H:i:s', strtotime($reportData['report']['disclosed_at'])),
+                            'category'    => null,
+                            'program'     => $reportData['team']['name']
+                        ];
 
-            if (isset($text['data']['search']['nodes'])) {
-                $fromIndex += count($text['data']['search']['nodes']);
-                foreach ($text['data']['search']['nodes'] as $reportData) {
-                    $reportId = $reportData['_id'];
+                        if (strtotime($report['published_at']) < strtotime(DATE_LAST_SCRAPING)) break 2;
+    
+                        $reports[] = $report;
 
-                    //Get details of a report
-                    $position = 1;
-                    $requestCounter++;
-                    require PATH_HELPERS . '/RequestVariablesSetFunction.php';
-                    showInfoNetworkRequest($position, $requestCounter);
-                    $text = executeNetworkRequest($position, $requestCounter);
-                    $text = json_decode($text['responseBody'], true);
-                    resetVariablesJsonTemplate();
-                    $report = [
-                        'external_id' => $reportData['_id'],
-                        'title'       => $reportData['report']['title'],
-                        'full_text'   => $text['vulnerability_information'],
-                        'severity'    => 0,
-                        'report_url'  => $reportData['report']['url'],
-                        'published_at' => substr(str_replace(["T", "Z", "."], "", $reportData['report']['disclosed_at']), 0, 18),
-                        'category'    => null,
-                        'program'     => $reportData['team']['name']
-                    ];
-
-                    $reports[] = $report;
-                }
-            } else break;
+                        usleep(500000);
+                    }
+                } else break;
+            } else logWithColor("No es array la rta de la web " . json_encode($text), "i");
         } while ($totalReportsCount > $fromIndex);
-
         return $reports;
     }
 }

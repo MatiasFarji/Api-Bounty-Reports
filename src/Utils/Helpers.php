@@ -27,7 +27,7 @@ function logWithColor($message, $type)
       'w' => "\033[33;40m",
       'i' => "\033[34;40m",
       'e' => "\033[31;40m",
-      'reset' => "\033[0m"  
+      'reset' => "\033[0m"
     ];
 
     if (isset($colors[$type])) {
@@ -58,33 +58,33 @@ function logWithColor($message, $type)
  */
 function showInfoNetworkRequest($position, $requestCounter)
 {
-    global $requestsJsonTemplate;
+  global $requestsJsonTemplate;
 
-    // Verify if the position exists
-    if (!isset($requestsJsonTemplate[$position])) {
-        logWithColor("Position {$position} does not exist in requestsJsonTemplate.", "e");
-        return;
-    }
+  // Verify if the position exists
+  if (!isset($requestsJsonTemplate[$position])) {
+    logWithColor("Position {$position} does not exist in requestsJsonTemplate.", "e");
+    return;
+  }
 
-    // Get the request at the given position
-    $request = $requestsJsonTemplate[$position];
+  // Get the request at the given position
+  $request = $requestsJsonTemplate[$position];
 
-    logWithColor("Position: $position  |  Counter: $requestCounter", "i");
-    logWithColor("Description: " . $request["Description"], "i");
-    logWithColor("METHOD:  " . $request['method'], 'w');
+  logWithColor("Position: $position  |  Counter: $requestCounter", "i");
+  logWithColor("Description: " . $request["description"], "i");
+  logWithColor("METHOD:  " . $request['method'], 'w');
 
-    // Show the URL with white background and black text
-    logWithColor("URL: " . $request['url'], "rg");
+  // Show the URL with white background and black text
+  logWithColor("URL: " . $request['url'], "rg");
 
-    // Check if there is POST data
-    if (isset($request['postData']) && !empty($request['postData']['text'])) {
-        // Show postData as raw text
-        logWithColor("Post Data Text: " . $request['postData']['text'], "rp");
-    } elseif (isset($request['postData']['params']) && !empty($request['postData']['params'])) {
-        // Show POST params formatted with http_build_query
-        $params = http_build_query($request['postData']['params']);
-        logWithColor("Post Data Params: " . $params, "rp");
-    }
+  // Check if there is POST data
+  if (isset($request['postData']) && !empty($request['postData']['text'])) {
+    // Show postData as raw text
+    logWithColor("Post Data Text: " . $request['postData']['text'], "rp");
+  } elseif (isset($request['postData']['params']) && !empty($request['postData']['params'])) {
+    // Show POST params formatted with http_build_query
+    $params = http_build_query($request['postData']['params']);
+    logWithColor("Post Data Params: " . $params, "rp");
+  }
 }
 
 /**
@@ -145,7 +145,7 @@ function executeNetworkRequest($position, $requestCounter)
       } else {
         // Para application/json o texto
         curl_setopt($ch, CURLOPT_POSTFIELDS, $postData['text']);
-        $headers[] = ['Content-Type: application/json'];
+        $headers[] = ["name" => "Content-Type", "value" => "application/json"];
       }
     }
   }
@@ -196,12 +196,49 @@ function executeNetworkRequest($position, $requestCounter)
   // Handle compressed content
   logWithColor("Response ContentEncoding: $contentEncoding", "i");
   logWithColor("Response ContentType: $contentType", "i");
-  if ($contentEncoding === 'gzip') {
-    $response['responseBody'] = gzdecode($response['responseBody']);
-    if ($response['responseBody'] === false) {
-      logWithColor("Failed to decompress gzip response.", "e");
-    }
+
+  switch (strtolower($contentEncoding)) {
+    case 'gzip':
+      $decoded = gzdecode($response['responseBody']);
+      if ($decoded === false) {
+        logWithColor("Failed to decompress gzip response.", "e");
+      } else {
+        $response['responseBody'] = $decoded;
+      }
+      break;
+
+    case 'deflate':
+      $decoded = gzinflate($response['responseBody']);
+      if ($decoded === false) {
+        logWithColor("Failed to decompress deflate response.", "e");
+      } else {
+        $response['responseBody'] = $decoded;
+      }
+      break;
+
+    case 'compress':
+      $decoded = gzuncompress($response['responseBody']);
+      if ($decoded === false) {
+        logWithColor("Failed to decompress compress response.", "e");
+      } else {
+        $response['responseBody'] = $decoded;
+      }
+      break;
+
+    case 'br':
+      logWithColor("Brotli compression detected but not supported natively by PHP.", "w");
+      break;
+
+    case '':
+    case 'identity':
+      // No compression
+      break;
+
+    default:
+      logWithColor("Unknown or unsupported Content-Encoding: $contentEncoding", "w");
+      break;
   }
+
 
   // Get extension based in Content-Type
   $extension = 'html'; // Default

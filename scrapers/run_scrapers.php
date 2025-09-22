@@ -4,8 +4,18 @@
  * Executes all scrapers in this directory and inserts results into DB
  */
 
-require_once __DIR__ . '/../src/Utils/Database.php';
+define('MODE_DEV', true);
+define('PATH_CACHE', __DIR__ . "/../cache/");
+define('PATH_TEMPLATES', __DIR__ . "/");
+define('PATH_HELPERS', __DIR__ . "/../src/Utils/");
+define('FIRST_SCRAPING', (file_exists(PATH_CACHE . "last_executed.txt") ? false : true));
+
+require_once PATH_HELPERS . '/Database.php';
+require_once PATH_HELPERS . 'Helpers.php';
 require_once __DIR__ . '/BaseScraper.php';
+
+$position = 0;
+$requestCounter = -1;
 
 // Load all scraper files except BaseScraper
 foreach (glob(__DIR__ . '/*_scraper.php') as $file) {
@@ -19,8 +29,10 @@ $db = Database::getInstance()->getConnection();
 foreach (get_declared_classes() as $class) {
     if (is_subclass_of($class, 'BaseScraper')) {
         $scraper = new $class();
+        $scraperName = str_replace("scraper", "", strtolower($scraper->getSourceName()));
+        $requestsJsonTemplate = json_decode(file_get_contents(PATH_TEMPLATES . $scraperName . "_requests_template.json"), true);
 
-        echo "[*] Running scraper: " . $scraper->getSourceName() . PHP_EOL;
+        echo "[*] Running scraper: " . $scraperName . PHP_EOL;
         $reports = $scraper->scrape();
 
         // Ensure source exists
@@ -29,7 +41,7 @@ foreach (get_declared_classes() as $class) {
             ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
             RETURNING id
         ");
-        $stmt->execute([':name' => $scraper->getSourceName()]);
+        $stmt->execute([':name' => $scraperName]);
         $sourceId = $stmt->fetchColumn();
 
         $inserted = 0;
@@ -97,6 +109,8 @@ foreach (get_declared_classes() as $class) {
             $inserted++;
         }
 
-        echo "[✔] $inserted reports inserted, $skipped skipped for " . $scraper->getSourceName() . PHP_EOL;
+        echo "[✔] $inserted reports inserted, $skipped skipped for " . $scraperName . PHP_EOL;
     }
 }
+
+file_put_contents(PATH_CACHE . "last_executed.txt", date("Y-m-d H:i:s"));

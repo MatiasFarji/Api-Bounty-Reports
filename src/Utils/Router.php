@@ -16,12 +16,8 @@ class Router
             if ($method === $route['method'] && preg_match($pattern, $uri, $matches)) {
                 $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
 
-                // Validate path params
                 $params = $this->validateRouteParams($params);
-
-                // Validate query params
-                $queryParams = $_GET ?? [];
-                $queryParams = $this->validateQueryParams($queryParams);
+                $queryParams = $this->validateQueryParams($_GET ?? []);
 
                 return call_user_func_array($route['handler'], [$params, $queryParams]);
             }
@@ -36,29 +32,13 @@ class Router
     private function validateRouteParams(array $params): array
     {
         foreach ($params as $key => $value) {
-            switch ($key) {
-                case 'id':
-                    if (!preg_match(
-                        '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i',
-                        $value
-                    )) {
-                        $this->badRequest("Invalid UUID format in route param '$key'");
-                    }
-                    break;
-
-                case 'source_id':
-                    if (!preg_match('/^[a-zA-Z0-9_-]+$/', $value)) {
-                        $this->badRequest("Invalid source_id in route");
-                    }
-                    break;
-
-                case 'category_id':
-                case 'program_id':
-                    if (!ctype_digit($value)) {
-                        $this->badRequest("Invalid numeric param '$key' in route");
-                    }
-                    $params[$key] = (int)$value;
-                    break;
+            if ($key === 'id') {
+                if (!preg_match(
+                    '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i',
+                    $value
+                )) {
+                    $this->badRequest("Invalid UUID format in route param '$key'");
+                }
             }
         }
         return $params;
@@ -76,27 +56,26 @@ class Router
                     break;
 
                 case 'source_id':
-                    if (preg_match('/^[a-zA-Z0-9_-]+$/', $value)) {
+                case 'program_id':
+                case 'subcategory_id':
+                    if (strlen($value) <= 500 && preg_match('/^\d+(,\d+)*$/', $value)) {
                         $validated[$key] = $value;
+                    } else {
+                        $this->badRequest("Invalid format for $key. Must be comma-separated numbers, max 500 chars.");
                     }
                     break;
 
-                case 'category_id':
-                case 'program_id':
                 case 'severity':
-                    // Split by comma and validate
                     $parts = array_filter(array_map('trim', explode(',', $value)));
                     $allowed = ['P1', 'P2', 'P3', 'P4', 'P5'];
-
                     foreach ($parts as $part) {
                         if (!in_array(strtoupper($part), $allowed, true)) {
                             $this->badRequest("Invalid severity value: $part. Allowed: " . implode(',', $allowed));
                         }
                     }
-
-                    // Store back normalized (uppercase) joined string
                     $validated[$key] = implode(',', array_map('strtoupper', $parts));
                     break;
+
                 case 'limit':
                     if (ctype_digit($value)) {
                         $validated[$key] = (int)$value;

@@ -1,15 +1,16 @@
 <?php
 require_once __DIR__ . '/../Utils/Database.php';
+require_once __DIR__ . '/Subcategory.php';
 
 class Report {
     /**
      * Get all reports with optional filters.
      *
      * Supported filters:
-     *   - source_id
-     *   - category_id
-     *   - program_id
-     *   - severity (Allowed string divided by comma P1,P2,P3,P4,P5)
+     *   - source_id (comma-separated numbers)
+     *   - subcategory_id (comma-separated numbers)
+     *   - program_id (comma-separated numbers)
+     *   - severity (comma-separated P1..P5)
      *   - date_from (>= published_at)
      *   - date_to   (<= published_at)
      *   - limit     (max rows, default 200)
@@ -24,29 +25,19 @@ class Report {
         $sql = "SELECT * FROM reports WHERE 1=1";
         $params = [];
 
-        // Filters
-        if (!empty($filters['source_id'])) {
-            $sql .= " AND source_id = :source_id";
-            $params[':source_id'] = $filters['source_id'];
-        }
-        if (!empty($filters['category_id'])) {
-            $sql .= " AND category_id = :category_id";
-            $params[':category_id'] = $filters['category_id'];
-        }
-        if (!empty($filters['program_id'])) {
-            $sql .= " AND program_id = :program_id";
-            $params[':program_id'] = $filters['program_id'];
-        }
-
-         // Filter by severities (via subcategories)
-        if (!empty($filters['severity'])) {
-            $severityStr = strtoupper($filters['severity']);
-            if (!preg_match('/^(P[1-5])(,P[1-5])*$/', $severityStr)) {
-                throw new InvalidArgumentException("Invalid severity filter format. Allowed: P1..P5, comma separated.");
+        // Multi-ID filters
+        foreach (['source_id', 'subcategory_id', 'program_id'] as $field) {
+            if (!empty($filters[$field])) {
+                $ids = array_filter(array_map('intval', explode(',', $filters[$field])));
+                if (!empty($ids)) {
+                    $sql .= " AND $field IN (" . implode(',', $ids) . ")";
+                }
             }
+        }
 
-            $severityList = explode(',', $severityStr);
-
+        // Filter by severities (via subcategories)
+        if (!empty($filters['severity'])) {
+            $severityList = explode(',', strtoupper($filters['severity']));
             $subIds = Subcategory::findIdsBySeverities($severityList);
             if (!empty($subIds)) {
                 $sql .= " AND subcategory_id IN (" . implode(',', array_map('intval', $subIds)) . ")";
@@ -65,7 +56,7 @@ class Report {
         }
 
         // Sorting (whitelist)
-        $allowedSortColumns = ['published_at', 'severity', 'title', 'scraped_at'];
+        $allowedSortColumns = ['published_at', 'title', 'scraped_at'];
         $sortBy = in_array($filters['sort_by'] ?? '', $allowedSortColumns, true)
             ? $filters['sort_by']
             : 'published_at';

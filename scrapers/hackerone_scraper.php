@@ -47,7 +47,6 @@ class HackerOneScraper extends BaseScraper
                             'external_id' => $reportData['_id'],
                             'title'       => $reportData['report']['title'],
                             'full_text'   => $text['vulnerability_information'],
-                            'severity'    => 0,
                             'report_url'  => $reportData['report']['url'],
                             'published_at' => date('Y-m-d H:i:s', strtotime($reportData['report']['disclosed_at'])),
                             'category'    => null,

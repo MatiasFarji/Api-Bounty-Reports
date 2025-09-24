@@ -136,14 +136,14 @@ function executeNetworkRequest($position, $requestCounter)
     curl_setopt($ch, CURLOPT_POST, true);
     if ($postData) {
       if (isset($postData['params'])) {
-        // Para application/x-www-form-urlencoded
+        // For application/x-www-form-urlencoded
         $postFields = [];
         foreach ($postData['params'] as $param) {
           $postFields[$param['name']] = $param['value'];
         }
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postFields));
       } else {
-        // Para application/json o texto
+        // For application/json or text
         curl_setopt($ch, CURLOPT_POSTFIELDS, $postData['text']);
         $headers[] = ["name" => "Content-Type", "value" => "application/json"];
       }

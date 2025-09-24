@@ -2,27 +2,52 @@
 /**
  * router.php
  * Global router for PHP built-in server
- * Serves static files from /public or delegates to /public/index.php
  */
 
 $uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
-$publicDir = realpath(__DIR__ . '/public');
+$publicDir = __DIR__ . '/public';
 
-// 1. Block directory traversal attempts
-if (strpos($uri, '..') !== false) {
+// Normalizar el path
+$normalized = '/' . ltrim($uri, '/');
+$publicPath = realpath($publicDir . $normalized);
+
+// Evitar path traversal
+if (strpos($normalized, '..') !== false) {
     http_response_code(404);
     header('Content-Type: application/json');
     echo json_encode(['error' => 'Not Found']);
     exit;
 }
 
-// 2. Resolve full path safely
-$publicPath = realpath($publicDir . $uri);
+// 1. Si el archivo existe dentro de /public → servirlo manualmente
+if ($publicPath && is_file($publicPath) && strpos($publicPath, $publicDir) === 0) {
+    $ext = pathinfo($publicPath, PATHINFO_EXTENSION);
 
-// If file exists and is inside /public, serve it
-if ($publicPath !== false && strpos($publicPath, $publicDir) === 0 && is_file($publicPath)) {
-    return false; // let PHP’s built-in server serve the file
+    // Tipos MIME básicos
+    $mimeTypes = [
+        'ico' => 'image/x-icon',
+        'png' => 'image/png',
+        'jpg' => 'image/jpeg',
+        'jpeg'=> 'image/jpeg',
+        'gif' => 'image/gif',
+        'css' => 'text/css',
+        'js'  => 'application/javascript',
+        'html'=> 'text/html'
+    ];
+
+    $mime = $mimeTypes[$ext] ?? 'application/octet-stream';
+    header("Content-Type: $mime");
+    readfile($publicPath);
+    exit;
 }
 
-// 3. Otherwise, forward to API router (index.php)
-require_once __DIR__ . '/public/index.php';
+// 2. Si el archivo no existe, devolver 404 JSON
+if ($normalized !== '/' && pathinfo($normalized, PATHINFO_EXTENSION)) {
+    http_response_code(404);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Not Found']);
+    exit;
+}
+
+// 3. Todo lo demás → pasa a index.php
+require_once $publicDir . '/index.php';

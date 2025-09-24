@@ -14,6 +14,7 @@ $router = new Router();
 require_once __DIR__ . '/../src/Routes/reports.php';
 require_once __DIR__ . '/../src/Routes/sources.php';
 require_once __DIR__ . '/../src/Routes/categories.php';
+require_once __DIR__ . '/../src/Routes/subcategories.php';
 require_once __DIR__ . '/../src/Routes/programs.php';
 
 // Parse request

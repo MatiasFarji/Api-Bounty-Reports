@@ -24,17 +24,28 @@ if (!isset($data['content'])) {
 
 function processNode($node, $parentCategoryId = null) {
     if ($parentCategoryId === null) {
+        // Root category
         $categoryId = Category::create($node['id']);
         echo "✅ Category synced: {$node['id']} (ID=$categoryId)\n";
+
+        if (empty($node['children'])) {
+            // Create a subcategory with the same name as the category
+            $subId = Subcategory::create($categoryId, $node['id']);
+            echo "  ↳ Default Subcategory created: {$node['id']} (ID=$subId)\n";
+        } else {
+            foreach ($node['children'] as $child) {
+                processNode($child, $categoryId);
+            }
+        }
     } else {
+        // Subcategory case
         $subId = Subcategory::create($parentCategoryId, $node['id']);
         echo "  ↳ Subcategory synced: {$node['id']} (under category $parentCategoryId)\n";
-        $categoryId = $parentCategoryId;
-    }
 
-    if (isset($node['children'])) {
-        foreach ($node['children'] as $child) {
-            processNode($child, $categoryId);
+        if (!empty($node['children'])) {
+            foreach ($node['children'] as $child) {
+                processNode($child, $parentCategoryId); // keep same category_id
+            }
         }
     }
 }

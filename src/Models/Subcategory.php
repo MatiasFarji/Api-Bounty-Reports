@@ -1,22 +1,42 @@
 <?php
 require_once __DIR__ . '/../Utils/Database.php';
 
-class Subcategory {
-    public static function getAll() {
+class Subcategory
+{
+    public static function getAll()
+    {
         $db = Database::getInstance()->getConnection();
         $stmt = $db->query("SELECT * FROM subcategories ORDER BY id ASC");
         return $stmt->fetchAll();
     }
 
-    public static function findByNameAndCategory($name, $categoryId) {
+    public static function findByNameAndCategory($name, $categoryId)
+    {
         $db = Database::getInstance()->getConnection();
         $stmt = $db->prepare("SELECT * FROM subcategories WHERE name = :name AND category_id = :category_id LIMIT 1");
         $stmt->execute([':name' => $name, ':category_id' => $categoryId]);
         return $stmt->fetch();
     }
 
-    public static function create($categoryId, $name, $cwe = null) {
-    $db = Database::getInstance()->getConnection();
+    /**
+     * Find subcategory by name only (ignores category_id).
+     * Useful for classification when category is unknown.
+     *
+     * @param string $name Subcategory name
+     * @return array|false Returns row as associative array or false if not found
+     */
+    public static function findByName($name)
+    {
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT * FROM subcategories WHERE name = :name LIMIT 1");
+        $stmt->execute([':name' => $name]);
+        return $stmt->fetch();
+    }
+
+
+    public static function create($categoryId, $name, $cwe = null)
+    {
+        $db = Database::getInstance()->getConnection();
         $stmt = $db->prepare("
             INSERT INTO subcategories (category_id, name, created_at)
             VALUES (:category_id, :name, now())

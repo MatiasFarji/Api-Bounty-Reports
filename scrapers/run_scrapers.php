@@ -10,10 +10,15 @@ define('PATH_TEMPLATES', __DIR__ . "/");
 define('PATH_HELPERS', __DIR__ . "/../src/Utils/");
 define('FIRST_SCRAPING', (file_exists(PATH_CACHE . "last_executed.txt") ? false : true));
 define('DATE_LAST_SCRAPING', (FIRST_SCRAPING ? date("Y-m-d H:i:s", strtotime("-30 years")) : file_get_contents(PATH_CACHE . "last_executed.txt")));
+define('TAXONOMY_MAP', (json_decode(file_get_contents(PATH_HELPERS . "taxonomy_keywords.json"), true)));
 
 require_once PATH_HELPERS . '/Database.php';
 require_once PATH_HELPERS . 'Helpers.php';
 require_once __DIR__ . '/BaseScraper.php';
+
+// Models
+require_once __DIR__ . '/../src/Models/Category.php';
+require_once __DIR__ . '/../src/Models/Subcategory.php';
 
 $position = 0;
 $requestCounter = -1;
@@ -83,28 +88,55 @@ foreach (get_declared_classes() as $class) {
                 continue;
             }
 
+            // --- Handle subcategory ---
+            $subcategoryId = null;
+
+            if (!empty($report['subcategory'])) {
+                // Buscar subcategoría por nombre
+                $subcategory = Subcategory::findByName($report['subcategory']);
+                if ($subcategory) {
+                    $subcategoryId = $subcategory['id'];
+                }
+            }
+
+            // Si no está seteado o no existe, clasificar automáticamente
+            if ($subcategoryId === null) {
+                $bestSub = classifyByTaxonomyKeywords(
+                    $report['title'] ?? '',
+                    $report['full_text'] ?? '',
+                    TAXONOMY_MAP
+                );
+
+                if ($bestSub) {
+                    $subcategory = Subcategory::findByName($bestSub);
+                    if ($subcategory) {
+                        $subcategoryId = $subcategory['id'];
+                    }
+                }
+            }
+
             // Insert new report, generating UUIDv7 from published_at (or current time if NULL)
             $stmt = $db->prepare("
                 INSERT INTO reports (
-                    id, source_id, category_id, program_id,
+                    id, source_id, program_id, subcategory_id,
                     external_id, title, full_text, severity, report_url, published_at
                 )
                 VALUES (
-                    gen_uuid_v7(:published_at), :source_id, :category_id, :program_id,
+                    gen_uuid_v7(:published_at), :source_id, :program_id, :subcategory_id,
                     :external_id, :title, :full_text, :severity, :report_url, :published_at
                 )
             ");
 
             $stmt->execute([
-                ':published_at' => $report['published_at'] ?? null,
-                ':source_id'    => $sourceId,
-                ':category_id'  => $categoryId,
-                ':program_id'   => $programId,
-                ':external_id'  => $report['external_id'],
-                ':title'        => $report['title'],
-                ':full_text'    => $report['full_text'],
-                ':severity'     => $report['severity'] ?? null,
-                ':report_url'   => $report['report_url'],
+                ':published_at'  => $report['published_at'] ?? null,
+                ':source_id'     => $sourceId,
+                ':program_id'    => $programId,
+                ':subcategory_id'=> $subcategoryId,
+                ':external_id'   => $report['external_id'],
+                ':title'         => $report['title'],
+                ':full_text'     => $report['full_text'],
+                ':severity'      => $report['severity'] ?? null,
+                ':report_url'    => $report['report_url'],
             ]);
 
             $inserted++;

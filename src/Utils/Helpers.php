@@ -319,3 +319,91 @@ function resetVariablesJsonTemplate()
   $requestsJsonTemplate = file_get_contents(PATH_TEMPLATES . $scraperName . "_requests_template.json");
   $requestsJsonTemplate = json_decode($requestsJsonTemplate, true);
 }
+
+
+/**
+ * Classify a report into the best matching subcategory using a keyword taxonomy.
+ *
+ * The function counts literal keyword occurrences for each subcategory across the
+ * report title and content, then returns the subcategory with the highest score.
+ * It handles:
+ *  - Alphanumeric tokens with word boundaries (e.g., "sqli", "csrf")
+ *  - Hyphen/underscore tokens with safe non-word boundaries
+ *  - “Special” tokens containing punctuation via literal matches (e.g., "alert(1)", "%0d%0a", "php://filter")
+ *
+ * Expected $taxonomyMap format (json_decode(true) of your file):
+ * [
+ *   "subcategory_name" => [
+ *     "keywords" => ["token1","token2", ...]
+ *   ],
+ *   ...
+ * ]
+ *
+ * @param string $title         Report title (plain text).
+ * @param string $content       Report body/content (plain text).
+ * @param array  $taxonomyMap   Associative array of subcategory => ['keywords' => [...]].
+ *
+ * @return string|null          Best matching subcategory name, or null if no matches.
+ */
+function classifyByTaxonomyKeywords(string $title, string $content, array $taxonomyMap): ?string
+{
+    // Prepare haystacks (lowercased for case-insensitive matching)
+    $titleLc   = mb_strtolower($title, 'UTF-8');
+    $contentLc = mb_strtolower($content, 'UTF-8');
+
+    // Helper: count occurrences of a token in a lowercase haystack
+    $countToken = static function (string $token, string $haystack): int {
+        if ($token === '') {
+            return 0;
+        }
+
+        // Decide matching strategy based on token characters
+        $isAlphaNumUnderscore = (bool)preg_match('/^[a-z0-9_]+$/i', $token);
+        $isAlphaNumUnderscoreHyphen = (bool)preg_match('/^[a-z0-9_-]+$/i', $token);
+
+        // Use regex patterns with boundaries when we safely can
+        if ($isAlphaNumUnderscore) {
+            // \b works well for [A-Za-z0-9_]
+            $pattern = '/\b' . preg_quote($token, '/') . '\b/u';
+            return preg_match_all($pattern, $haystack, $m) ?: 0;
+        }
+
+        if ($isAlphaNumUnderscoreHyphen) {
+            // Hyphen is not a word char; use custom "not word-char" boundaries (letters/digits/_)
+            $pattern = '/(?<![A-Za-z0-9_])' . preg_quote($token, '/') . '(?![A-Za-z0-9_])/u';
+            return preg_match_all($pattern, $haystack, $m) ?: 0;
+        }
+
+        // Fallback: literal substring match via regex (safe-quoted), anywhere in text
+        $pattern = '/' . preg_quote($token, '/') . '/u';
+        return preg_match_all($pattern, $haystack, $m) ?: 0;
+    };
+
+    $bestSubcategory = null;
+    $bestScore       = 0;
+
+    foreach ($taxonomyMap as $subcategory => $data) {
+        if (!isset($data['keywords']) || !is_array($data['keywords'])) {
+            continue;
+        }
+
+        $score = 0;
+
+        // Count occurrences in both title and content (equal weight)
+        foreach ($data['keywords'] as $rawToken) {
+            $token = mb_strtolower((string)$rawToken, 'UTF-8');
+            if ($token === '' || mb_strlen($token, 'UTF-8') < 2) {
+                continue; // skip empty/too-short noise tokens
+            }
+            $score += $countToken($token, $titleLc);
+            $score += $countToken($token, $contentLc);
+        }
+
+        if ($score > $bestScore) {
+            $bestScore       = $score;
+            $bestSubcategory = $subcategory;
+        }
+    }
+
+    return $bestSubcategory;
+}

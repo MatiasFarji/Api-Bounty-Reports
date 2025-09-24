@@ -75,7 +75,7 @@ echo "======================================"
 
 echo ""
 echo "You can now start your API with multi-worker PHP server:"
-echo "    PHP_CLI_SERVER_WORKERS=20 php -S 0.0.0.0:8000 -t public/"
+echo "    PHP_CLI_SERVER_WORKERS=20 php -S 0.0.0.0:8000 router.php"
 echo ""
 echo "Or simply run:"
 echo "    startServer"

@@ -1,12 +1,15 @@
 <?php
-class Router {
+class Router
+{
     private $routes = [];
 
-    public function add($method, $path, $handler) {
+    public function add($method, $path, $handler)
+    {
         $this->routes[] = compact('method', 'path', 'handler');
     }
 
-    public function dispatch($method, $uri) {
+    public function dispatch($method, $uri)
+    {
         foreach ($this->routes as $route) {
             $pattern = "@^" . preg_replace('/\{(\w+)\}/', '(?P<\1>[^/]+)', $route['path']) . "$@";
 
@@ -30,7 +33,8 @@ class Router {
         exit;
     }
 
-    private function validateRouteParams(array $params): array {
+    private function validateRouteParams(array $params): array
+    {
         foreach ($params as $key => $value) {
             switch ($key) {
                 case 'id':
@@ -60,7 +64,8 @@ class Router {
         return $params;
     }
 
-    private function validateQueryParams(array $query): array {
+    private function validateQueryParams(array $query): array
+    {
         $validated = [];
         foreach ($query as $key => $value) {
             switch ($key) {
@@ -79,8 +84,19 @@ class Router {
                 case 'category_id':
                 case 'program_id':
                 case 'severity':
-                case 'severity_min':
-                case 'severity_max':
+                    // Split by comma and validate
+                    $parts = array_filter(array_map('trim', explode(',', $value)));
+                    $allowed = ['P1', 'P2', 'P3', 'P4', 'P5'];
+
+                    foreach ($parts as $part) {
+                        if (!in_array(strtoupper($part), $allowed, true)) {
+                            $this->badRequest("Invalid severity value: $part. Allowed: " . implode(',', $allowed));
+                        }
+                    }
+
+                    // Store back normalized (uppercase) joined string
+                    $validated[$key] = implode(',', array_map('strtoupper', $parts));
+                    break;
                 case 'limit':
                     if (ctype_digit($value)) {
                         $validated[$key] = (int)$value;
@@ -113,7 +129,8 @@ class Router {
         return $validated;
     }
 
-    private function badRequest(string $message): void {
+    private function badRequest(string $message): void
+    {
         http_response_code(400);
         header('Content-Type: application/json');
         echo json_encode(['error' => $message]);

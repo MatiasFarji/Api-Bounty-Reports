@@ -22,19 +22,37 @@ if (!isset($data['content'])) {
     exit(1);
 }
 
-function processNode($node, $parentCategoryId = null) {
+// Load priorities mapping
+$prioritiesFile = __DIR__ . '/taxonomy_priorities.json';
+if (!file_exists($prioritiesFile)) {
+    fwrite(STDERR, "⚠️ taxonomy_priorities.json not found, skipping priorities\n");
+    $prioritiesMap = [];
+} else {
+    $prioritiesMap = json_decode(file_get_contents($prioritiesFile), true) ?? [];
+}
+
+/**
+ * Process node recursively
+ */
+function processNode($node, $parentCategoryId = null, $prioritiesMap = []) {
     if ($parentCategoryId === null) {
         // Root category
         $categoryId = Category::create($node['id']);
         echo "✅ Category synced: {$node['id']} (ID=$categoryId)\n";
 
         if (empty($node['children'])) {
-            // Create a subcategory with the same name as the category
+            // Create a subcategory with same name as category
             $subId = Subcategory::create($categoryId, $node['id']);
             echo "  ↳ Default Subcategory created: {$node['id']} (ID=$subId)\n";
+
+            // Assign severity if exists
+            if (isset($prioritiesMap[$node['id']])) {
+                Subcategory::updateSeverity($subId, $prioritiesMap[$node['id']]);
+                echo "    ↳ Severity set to {$prioritiesMap[$node['id']]}\n";
+            }
         } else {
             foreach ($node['children'] as $child) {
-                processNode($child, $categoryId);
+                processNode($child, $categoryId, $prioritiesMap);
             }
         }
     } else {
@@ -42,16 +60,22 @@ function processNode($node, $parentCategoryId = null) {
         $subId = Subcategory::create($parentCategoryId, $node['id']);
         echo "  ↳ Subcategory synced: {$node['id']} (under category $parentCategoryId)\n";
 
+        // Assign severity if exists
+        if (isset($prioritiesMap[$node['id']])) {
+            Subcategory::updateSeverity($subId, $prioritiesMap[$node['id']]);
+            echo "    ↳ Severity set to {$prioritiesMap[$node['id']]}\n";
+        }
+
         if (!empty($node['children'])) {
             foreach ($node['children'] as $child) {
-                processNode($child, $parentCategoryId); // keep same category_id
+                processNode($child, $parentCategoryId, $prioritiesMap); // keep same category_id
             }
         }
     }
 }
 
 foreach ($data['content'] as $rootNode) {
-    processNode($rootNode);
+    processNode($rootNode, null, $prioritiesMap);
 }
 
 echo "🎉 Taxonomy sync complete\n";

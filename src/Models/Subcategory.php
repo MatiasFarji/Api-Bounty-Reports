@@ -33,6 +33,32 @@ class Subcategory
         return $stmt->fetch();
     }
 
+     /**
+     * Find subcategory IDs by severities (e.g. ['P1','P2']).
+     *
+     * @param array $severities
+     * @return array List of subcategory IDs
+     */
+    public static function findIdsBySeverities(array $severities) {
+        if (empty($severities)) {
+            return [];
+        }
+
+        $db = Database::getInstance()->getConnection();
+        $placeholders = [];
+        $params = [];
+        foreach ($severities as $i => $sev) {
+            $key = ":sev{$i}";
+            $placeholders[] = $key;
+            $params[$key] = $sev;
+        }
+
+        $sql = "SELECT id FROM subcategories WHERE severity IN (" . implode(',', $placeholders) . ")";
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(\PDO::FETCH_COLUMN);
+    }
+
 
     public static function create($categoryId, $name, $cwe = null)
     {
@@ -48,5 +74,14 @@ class Subcategory
             ':name' => $name
         ]);
         return $stmt->fetchColumn();
+    }
+
+    public static function updateSeverity($id, $severity) {
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("UPDATE subcategories SET severity = :severity WHERE id = :id");
+        $stmt->execute([
+            ':severity' => $severity,
+            ':id' => $id
+        ]);
     }
 }

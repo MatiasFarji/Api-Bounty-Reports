@@ -40,6 +40,17 @@ END;
 $$ LANGUAGE plpgsql VOLATILE;
 
 -- ========================================
+-- Severity ENUM
+-- ========================================
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'severity_level') THEN
+        CREATE TYPE severity_level AS ENUM ('P1','P2','P3','P4','P5');
+    END IF;
+END
+$$;
+
+-- ========================================
 -- Schema ownership
 -- ========================================
 ALTER SCHEMA public OWNER TO :db_user;
@@ -73,6 +84,7 @@ CREATE TABLE IF NOT EXISTS subcategories (
     id SERIAL PRIMARY KEY,
     category_id INT NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
+    severity severity_level DEFAULT NULL, -- default medium severity
     UNIQUE(category_id, name),
     created_at TIMESTAMP DEFAULT now()
 );
@@ -97,7 +109,6 @@ CREATE TABLE IF NOT EXISTS reports (
     external_id TEXT,
     title TEXT NOT NULL,
     full_text TEXT,
-    severity SMALLINT CHECK (severity >= 0 AND severity <= 100),
     report_url TEXT,
     published_at TIMESTAMP,
     scraped_at TIMESTAMP DEFAULT now(),
@@ -116,7 +127,6 @@ CREATE INDEX IF NOT EXISTS idx_reports_program_id ON reports(program_id);
 CREATE INDEX IF NOT EXISTS idx_reports_search_vector ON reports USING GIN (search_vector);
 
 CREATE INDEX IF NOT EXISTS idx_reports_published_at ON reports(published_at);
-CREATE INDEX IF NOT EXISTS idx_reports_severity ON reports(severity);
 
 -- ========================================
 -- Ownership

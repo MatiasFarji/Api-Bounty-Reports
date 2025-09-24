@@ -9,9 +9,7 @@ class Report {
      *   - source_id
      *   - category_id
      *   - program_id
-     *   - severity (exact match)
-     *   - severity_min (>=)
-     *   - severity_max (<=)
+     *   - severity (Allowed string divided by comma P1,P2,P3,P4,P5)
      *   - date_from (>= published_at)
      *   - date_to   (<= published_at)
      *   - limit     (max rows, default 200)
@@ -39,18 +37,24 @@ class Report {
             $sql .= " AND program_id = :program_id";
             $params[':program_id'] = $filters['program_id'];
         }
+
+         // Filter by severities (via subcategories)
         if (!empty($filters['severity'])) {
-            $sql .= " AND severity = :severity";
-            $params[':severity'] = $filters['severity'];
+            $severityStr = strtoupper($filters['severity']);
+            if (!preg_match('/^(P[1-5])(,P[1-5])*$/', $severityStr)) {
+                throw new InvalidArgumentException("Invalid severity filter format. Allowed: P1..P5, comma separated.");
+            }
+
+            $severityList = explode(',', $severityStr);
+
+            $subIds = Subcategory::findIdsBySeverities($severityList);
+            if (!empty($subIds)) {
+                $sql .= " AND subcategory_id IN (" . implode(',', array_map('intval', $subIds)) . ")";
+            } else {
+                return []; // no matches
+            }
         }
-        if (!empty($filters['severity_min'])) {
-            $sql .= " AND severity >= :severity_min";
-            $params[':severity_min'] = $filters['severity_min'];
-        }
-        if (!empty($filters['severity_max'])) {
-            $sql .= " AND severity <= :severity_max";
-            $params[':severity_max'] = $filters['severity_max'];
-        }
+
         if (!empty($filters['date_from'])) {
             $sql .= " AND published_at >= :date_from";
             $params[':date_from'] = $filters['date_from'];

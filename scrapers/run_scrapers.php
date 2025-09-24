@@ -119,11 +119,11 @@ foreach (get_declared_classes() as $class) {
             $stmt = $db->prepare("
                 INSERT INTO reports (
                     id, source_id, program_id, subcategory_id,
-                    external_id, title, full_text, severity, report_url, published_at
+                    external_id, title, full_text, report_url, published_at
                 )
                 VALUES (
                     gen_uuid_v7(:published_at), :source_id, :program_id, :subcategory_id,
-                    :external_id, :title, :full_text, :severity, :report_url, :published_at
+                    :external_id, :title, :full_text, :report_url, :published_at
                 )
             ");
 
@@ -135,7 +135,6 @@ foreach (get_declared_classes() as $class) {
                 ':external_id'   => $report['external_id'],
                 ':title'         => $report['title'],
                 ':full_text'     => $report['full_text'],
-                ':severity'      => $report['severity'] ?? null,
                 ':report_url'    => $report['report_url'],
             ]);
 

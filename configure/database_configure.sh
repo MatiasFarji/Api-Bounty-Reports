@@ -45,6 +45,23 @@ CREATE DATABASE ${DB_NAME} OWNER ${DB_USER};
 GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};
 EOF
 
+# Ask for schema reset
+read -p "Do you want to drop existing tables and functions in database ${DB_NAME}? (y/N): " CONFIRM
+if [[ "$CONFIRM" =~ ^[Yy]$ ]]; then
+    echo "[*] Dropping existing tables and functions..."
+    sudo -u postgres psql -d ${DB_NAME} <<EOF
+    DROP TABLE IF EXISTS reports CASCADE;
+    DROP TABLE IF EXISTS programs CASCADE;
+    DROP TABLE IF EXISTS categories CASCADE;
+    DROP TABLE IF EXISTS subcategories CASCADE;
+    DROP TABLE IF EXISTS sources CASCADE;
+    DROP FUNCTION IF EXISTS gen_uuid_v7(TIMESTAMP WITH TIME ZONE);
+EOF
+    echo "[✔] Cleanup completed."
+else
+    echo "[*] Skipping cleanup, existing schema preserved."
+fi
+
 echo "[*] Applying schema from ${SCHEMA_FILE}..."
 if [ -f "$SCHEMA_FILE" ]; then
     sudo -u postgres psql -d ${DB_NAME} -v db_user=${DB_USER} -f "$SCHEMA_FILE"

@@ -79,7 +79,7 @@ class Report {
 
         // Limit (safeguarded)
         $limit = (!empty($filters['limit']) && is_numeric($filters['limit']))
-            ? min((int)$filters['limit'], 1000) // cap at 1000 rows max
+            ? (int)$filters['limit']
             : 200;
 
         $sql .= " LIMIT {$limit}";

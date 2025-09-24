@@ -28,7 +28,7 @@ class HackerOneScraper extends BaseScraper
 
             $text = json_decode($text['responseBody'], true);
             if (is_array($text)) {
-                //$totalReportsCount = $text['data']['search']['total_count'] ?? 0;
+                $totalReportsCount = $text['data']['search']['total_count'] ?? 0;
     
                 if (isset($text['data']['search']['nodes'])) {
                     $fromIndex += count($text['data']['search']['nodes']);

@@ -158,3 +158,22 @@ Please keep the project GPL‑compliant and preserve author attribution.
 - If PostgreSQL authentication fails (`Peer authentication failed`), ensure you connect with the created role and that the installer finished successfully.
 - The first scraping run may take a long time; subsequent runs are incremental.
 - The PHP built‑in server is fine for development. For production, consider a multi‑process SAPI (e.g., FPM + nginx) if you need higher concurrency and stability.
+
+---
+
+## 📌 Disclaimer & Opt-out
+
+This API and repository are based on **publicly available information** collected from bug bounty programs and related sources.  
+Data is gathered through **responsible scraping**, with delays and limitations to avoid impacting third-party infrastructure.  
+
+The project is **open source** and strictly non-commercial.  
+There is no official affiliation with HackerOne, Bugcrowd, or any other platforms whose data may appear here.  
+
+### Opt-out
+If you are the owner of any of the data published in this API and wish to have it **removed or excluded**, you can request it by contacting:  
+
+📧 `matiasfarji@gmail.com`  
+
+Requests will be handled promptly and with full commitment.  
+
+---

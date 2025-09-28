@@ -70,10 +70,12 @@ class Report {
 
         // Limit (safeguarded)
         $limit = (!empty($filters['limit']) && is_numeric($filters['limit']))
-            ? (int)$filters['limit']
-            : 200;
+            ? min((int)$filters['limit'], 2000)
+            : (!empty($filters) ? 2000 : 0);
 
-        $sql .= " LIMIT {$limit}";
+        if ($limit > 0) {
+            $sql .= " LIMIT {$limit}";
+        }
 
         $stmt = $db->prepare($sql);
         $stmt->execute($params);

@@ -1,1 +1,136 @@
-[]
+[
+  {
+    "extraVariablesNeededToSet": [
+      {
+        "remoteVariableName": "pageId",
+        "localVariableName": "pageId",
+        "targetLocation": "get"
+      }
+    ],
+    "description": "Get and paginate reports",
+    "method": "GET",
+    "url": "https://bugcrowd.com/crowdstream.json?page={{pageId}}&filter_by=disclosures",
+    "cookies": [],
+    "headers": [
+      {
+        "name": "sec-ch-ua",
+        "value": "\"Chromium\";v=\"127\", \"Not)A;Brand\";v=\"99\""
+      },
+      {
+        "name": "accept-language",
+        "value": "en-US"
+      },
+      {
+        "name": "sec-ch-ua-mobile",
+        "value": "?0"
+      },
+      {
+        "name": "user-agent",
+        "value": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
+      },
+      {
+        "name": "sec-ch-ua-platform",
+        "value": "\"Linux\""
+      },
+      {
+        "name": "accept",
+        "value": "*/*"
+      },
+      {
+        "name": "sec-fetch-site",
+        "value": "same-origin"
+      },
+      {
+        "name": "sec-fetch-mode",
+        "value": "cors"
+      },
+      {
+        "name": "sec-fetch-dest",
+        "value": "empty"
+      },
+      {
+        "name": "referer",
+        "value": "https://bugcrowd.com/crowdstream"
+      },
+      {
+        "name": "accept-encoding",
+        "value": "gzip, deflate, br, zstd"
+      },
+      {
+        "name": "priority",
+        "value": "u=1, i"
+      }
+    ]
+  },
+  {
+    "extraVariablesNeededToSet": [
+      {
+        "remoteVariableName": "reportPath",
+        "localVariableName": "reportPath",
+        "targetLocation": "get"
+      }
+    ],
+    "description": "Get details of a report",
+    "method": "GET",
+    "url": "https://bugcrowd.com{{reportPath}}",
+    "cookies": [],
+    "headers": [
+      {
+        "name": "sec-ch-ua",
+        "value": "\"Chromium\";v=\"127\", \"Not)A;Brand\";v=\"99\""
+      },
+      {
+        "name": "sec-ch-ua-mobile",
+        "value": "?0"
+      },
+      {
+        "name": "sec-ch-ua-platform",
+        "value": "\"Linux\""
+      },
+      {
+        "name": "accept-language",
+        "value": "en-US"
+      },
+      {
+        "name": "upgrade-insecure-requests",
+        "value": "1"
+      },
+      {
+        "name": "user-agent",
+        "value": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
+      },
+      {
+        "name": "accept",
+        "value": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
+      },
+      {
+        "name": "sec-fetch-site",
+        "value": "same-origin"
+      },
+      {
+        "name": "sec-fetch-mode",
+        "value": "navigate"
+      },
+      {
+        "name": "sec-fetch-user",
+        "value": "?1"
+      },
+      {
+        "name": "sec-fetch-dest",
+        "value": "document"
+      },
+      {
+        "name": "referer",
+        "value": "https://bugcrowd.com/crowdstream"
+      },
+      {
+        "name": "accept-encoding",
+        "value": "gzip, deflate, br, zstd"
+      },
+      {
+        "name": "priority",
+        "value": "u=0, i"
+      }
+    ]
+  }
+]

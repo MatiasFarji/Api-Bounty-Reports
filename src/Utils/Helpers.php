@@ -407,3 +407,134 @@ function classifyByTaxonomyKeywords(string $title, string $content, array $taxon
 
     return $bestSubcategory;
 }
+
+function traverse($element)
+{
+  $output = [];
+  $output['tagname'] = $element->tagName;
+  if ($element->hasAttributes() || $element->nodeValue) {
+    $attributes = [];
+
+
+    foreach ($element->attributes as $attr) {
+      $attributes[$attr->name] = $attr->value;
+    }
+
+    if ($element->nodeValue) {
+      $attributes['innerHtml'] = $element->nodeValue;
+    }
+
+    $output['attributes'] = $attributes;
+  }
+  if ($element->hasChildNodes()) {
+    $childNodes = $element->childNodes;
+    foreach ($childNodes as $child) {
+      if ($child->nodeType == XML_ELEMENT_NODE) {
+        $output[$child->tagName][] = traverse($child);
+      }
+    }
+  }
+  return $output;
+}
+
+//Genera un array asociativo de etiquetas con capas en profundidad
+function conversionHtmlToArray($html, $firstTag)
+{
+  $html = '<?xml encoding="UTF-8">' . $html;
+  $doc = new DOMDocument();
+  $doc->loadHTML($html, LIBXML_DTDVALID | LIBXML_NOERROR);
+  $root = $doc->getElementsByTagName($firstTag)->item(0);
+  //Como acceder a un elemento, ejecutar traverse($root), y luego es un array asociativo, por ejemplo: traverse($root)["body"][0]["div"][0]["form"][0]["div"][0]["input"]
+  return (traverse($root));
+}
+
+function htmlDomSearcher(DOMDocument $dom, string $tipoBusqueda, string $valorBuscar, ?string $keyAttributeBuscar = null, ?bool $literal = false): ?DOMNodeList
+{
+  /* Ejemplo de uso
+        $text = str_replace('content="text/html; charset=ISO-8859-1"', 'content="text/html; charset=UTF-8"', $text); //Aclara el meta para que no de problemas con la codificación
+
+        // Asegurarse de que el HTML esté en UTF-8
+        $text = mb_encode_numericentity(
+            htmlspecialchars_decode(
+                htmlentities($text, ENT_NOQUOTES, 'UTF-8', false)
+                ,ENT_NOQUOTES
+            ), [0x80, 0x10FFFF, 0, ~0],
+            'UTF-8'
+        );
+
+        $dom = new DOMDocument();
+        $dom->loadHTML(file_get_contents('archivo.html'), LIBXML_DTDVALID | LIBXML_NOERROR);
+        $dom->loadHTML(mb_convert_encoding($text, 'HTML-ENTITIES', 'UTF-8'), LIBXML_DTDVALID | LIBXML_NOERROR); // En algunos casos tiene problemas con la interpretacion de caracteres HTML, en ese caso probar con esta conversion
+        //Primer argumento, el DOMDocument, segundo argumento, en donde buscar, tercer argumento, el valor de busqueda, y cuarto argumento, si se busca un atributo, como parametro opcional, el nombre del atributo, tambien un quinto parametro opcional, $literal, por default false, si es true busca el valor exacto
+
+        $elementoBuscado = htmlDomSearcher($dom, 'attribute', '-slider', 'class');
+
+        Luego se puede acceder por indices, por ejemplo, para obtener el primer elemento encontrado que coincida los parametros de busqueda:
+        $elementoBuscado[0]
+        Luego se puede acceder a las propiedades, por ejemplo, para obtener el valor de un atributo:
+        $elementoBuscado[0]->getAttribute('class')
+
+        Para obtener el innerHTML:
+        $dom->saveHTML($elementoBuscado[0]);
+
+        Para obtener el textContent:
+        $elementoBuscado[0]->textContent;
+
+        Para obtener el nodeValue:
+        Ejemplo de uso: '<span id="ctl00_Content_InfoContrato_ctl01_lbldesccuenta">ES96 0128 0601 8601 0011 9263<br>Palbox Holding, S.L. (Cuenta Bankinter)</span>'
+        $elementoBuscado[0]->firstChild->nodeValue
+        Resultado obtenido: ES96 0128 0601 8601 0011 9263
+
+    */
+  $xpath = new DOMXPath($dom);
+
+  switch ($tipoBusqueda) {
+    case 'attribute':
+      if ($keyAttributeBuscar === null) {
+        if ($literal) {
+          $query = "//*[@* = '{$valorBuscar}']";
+        } else {
+          $query = "//*[contains(@*, '{$valorBuscar}')]";
+        }
+      } else {
+        if ($literal) {
+          $query = "//*[@{$keyAttributeBuscar} = '{$valorBuscar}']";
+        } else {
+          $query = "//*[@{$keyAttributeBuscar} and contains(@{$keyAttributeBuscar}, '{$valorBuscar}')]";
+        }
+      }
+      break;
+    case 'tagName':
+      if ($literal) {
+        $query = "//*[name() = '{$valorBuscar}']";
+      } else {
+        $query = "//*[contains(name(), '{$valorBuscar}')]";
+      }
+      break;
+    case 'innerHtml':
+      if ($literal) {
+        $query = "//*[. = '{$valorBuscar}']";
+      } else {
+        $query = "//*[contains(., '{$valorBuscar}')]";
+      }
+      break;
+    case 'textContent':
+      if ($literal) {
+        $query = "//*[text() = '{$valorBuscar}']";
+      } else {
+        $query = "//*[contains(text(), '{$valorBuscar}')]";
+      }
+      break;
+    default:
+      throw new InvalidArgumentException('Tipo de búsqueda no válido. Debe ser attribute, tagName, outerHtml o innerHtml.');
+  }
+
+
+  $elementosEncontrados = $xpath->query($query);
+
+  if ($elementosEncontrados->length === 0) {
+    $elementosEncontrados = null;
+  }
+
+  return $elementosEncontrados;
+}

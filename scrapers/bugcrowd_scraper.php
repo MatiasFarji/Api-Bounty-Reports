@@ -45,6 +45,10 @@ class BugcrowdScraper extends BaseScraper
                         $text = executeNetworkRequest($position, $requestCounter);
                         resetVariablesJsonTemplate();
 
+                        if ($text["httpCode"] != 200) {
+                            continue;
+                        }
+
                         $dom = new DOMDocument();
                         $dom->loadHTML($text["responseBody"], LIBXML_DTDVALID | LIBXML_NOERROR);
                         $reportDetailsList = htmlDomSearcher($dom, 'attribute', 'bc-stats bc-disclosure-stats', 'class', true);
